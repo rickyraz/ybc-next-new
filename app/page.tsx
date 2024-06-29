@@ -1,27 +1,57 @@
-import DeployButton from "../components/DeployButton";
-import AuthButton from "../components/AuthButton";
-import { createClient } from "@/utils/supabase/client";
-import ConnectSupabaseSteps from "@/components/tutorial/ConnectSupabaseSteps";
-import SignUpUserSteps from "@/components/tutorial/SignUpUserSteps";
-import Header from "@/components/Header";
-import { getAllProduct } from "@/actions/get-all-product";
+import {
+	getAllCategory,
+	getAllHeroImage,
+	getAllLabelled,
+} from "@/actions/get-landing";
+import HeroSlider from "@/components/HeroSlider";
+import ProductSlider from "@/components/ProductSlider";
+import ProductFilter from "@/components/landing/ProductFilter";
+import Welcome from "@/components/landing/Welcome";
 
 export default async function Index() {
-  const data = await getAllProduct();
-  console.log("data", data);
+	const allProductLabelled = getAllLabelled();
+	const allHeroImage = getAllHeroImage();
+	const AllCategoryWithProduct = getAllCategory();
+	const [labeled, hero, category] = await Promise.all([
+		allProductLabelled,
+		allHeroImage,
+		AllCategoryWithProduct,
+	]);
 
-  console.log("test");
+	const sortedCategory = category?.map((category: { products: any[] }) => {
+		const sortedProducts = category.products.map((product) => {
+			return {
+				...product,
+				variations: product.variations.sort(
+					(a: { price: number }, b: { price: number }) => a.price - b.price,
+				),
+			};
+		});
 
-  return (
-    <>
-    <p>test</p>
-      {/* <div className="flex-1 flex flex-col gap-20 max-w-4xl px-3">
-        <Header />
-        <main className="flex-1 flex flex-col gap-6">
-          <h2 className="font-bold text-4xl mb-4">Next steps</h2>
-          {isSupabaseConnected ? <SignUpUserSteps /> : <ConnectSupabaseSteps />}
-        </main>
-      </div> */}
-    </>
-  );
+		return {
+			...category,
+			products: sortedProducts,
+		};
+	});
+
+	console.log("labeled", labeled);
+	console.log("hero", hero);
+	console.log("sortedCategory", sortedCategory);
+
+	return (
+		<div>
+			<HeroSlider
+				hero_data={hero}
+				loop_status={true}
+				position_hero={"landing_page"}
+			/>
+			<ProductSlider
+				title={"PRODUK TERLARIS"}
+				per_view_desk={4}
+				product_spesific_data={labeled}
+			/>
+			<Welcome />
+			<ProductFilter categories={sortedCategory} />
+		</div>
+	);
 }
